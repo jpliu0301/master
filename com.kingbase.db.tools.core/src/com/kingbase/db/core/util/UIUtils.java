@@ -1,0 +1,85 @@
+package com.kingbase.db.core.util;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+
+import org.dom4j.io.OutputFormat;
+import org.eclipse.jface.window.IShellProvider;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.PlatformUI;
+
+public class UIUtils {
+	
+	private final static String DATABASE = "TEMPLATE2";
+	/**
+	 * 设置text只能输入数字
+	 * 
+	 * @param Control
+	 *            text
+	 */
+	public static void verifyTextNumber(Control text) {
+		text.addListener(SWT.Verify, new Listener() {
+			public void handleEvent(Event e) {
+				String string = e.text;
+				char[] chars = new char[string.length()];
+				string.getChars(0, chars.length, chars, 0);
+				for (int i = 0; i < chars.length; i++) {
+					if (!('0' <= chars[i] && chars[i] <= '9')) {
+						e.doit = false;
+						return;
+					}
+				}
+			}
+		});
+	}
+
+	/**
+	 * 设置text不能输入空格
+	 * 
+	 * @param Control
+	 *            text
+	 */
+	public static void verifyTextNotSpace(Control text) {
+		text.addListener(SWT.Verify, new Listener() {
+			public void handleEvent(Event e) {
+				if (e.keyCode == 32) {
+					e.doit = false;
+					return;
+				}
+			}
+		});
+	}
+
+	public static Shell getActiveShell() {
+		IWorkbench workbench = PlatformUI.getWorkbench();
+		return workbench == null ? null : getShell(workbench.getActiveWorkbenchWindow());
+	}
+
+	public static Shell getShell(IShellProvider provider) {
+		return provider == null ? null : provider.getShell();
+	}
+
+
+	public static OutputFormat xmlFormat() {
+		OutputFormat format = OutputFormat.createPrettyPrint(); // 设置XML文档输出格式
+		format.setEncoding("gb2312"); // 设置XML文档的编码类型
+		format.setSuppressDeclaration(true);
+		format.setIndent(true); // 设置是否缩进
+		format.setIndent("  "); // 以空格方式实现缩进
+		format.setNewlines(true); // 设置是否换行
+		return format;
+	}
+
+	public static String getDatabase() {
+		return DATABASE;
+	}
+	
+	
+}
