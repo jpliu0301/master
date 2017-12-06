@@ -25,6 +25,7 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
 
         	System.out.println("测试一下");
 
+        	System.out.println("cdecf1111111");
         	System.out.println("====两个分支合并冲突====");
 
         	return ;
