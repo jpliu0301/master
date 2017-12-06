@@ -21,6 +21,9 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
 	public void postStartup() {
         super.postStartup();
 
+        if(PlatformUI.getWorkbench().getActiveWorkbenchWindow()==null){
+        	return ;
+        }
         IWorkbenchPage PAGE = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
         IEditorPart[] editorPart=PAGE.getEditors();
         for (int j = 0; j < editorPart.length; j++) {
