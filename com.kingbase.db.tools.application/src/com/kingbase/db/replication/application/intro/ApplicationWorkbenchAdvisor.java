@@ -22,6 +22,7 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
         super.postStartup();
 
         if(PlatformUI.getWorkbench().getActiveWorkbenchWindow()==null){
+        	System.out.println("测试一下");
         	return ;
         }
         IWorkbenchPage PAGE = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
