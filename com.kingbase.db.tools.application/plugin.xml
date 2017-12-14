@@ -26,10 +26,10 @@
          point="org.eclipse.core.runtime.products">
       <product
             application="com.kingbase.db.tools.application.application"
-            name="tools">
+            name="test">
          <property
                name="appName"
-               value="tools">
+               value="test">
          </property>
       </product>
    </extension>

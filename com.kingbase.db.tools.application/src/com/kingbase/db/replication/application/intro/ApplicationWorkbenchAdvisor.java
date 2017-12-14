@@ -21,6 +21,15 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
 	public void postStartup() {
         super.postStartup();
 
+        if(PlatformUI.getWorkbench().getActiveWorkbenchWindow()==null){
+
+        	System.out.println("测试一下");
+
+        	System.out.println("cdecf1111111");
+        	System.out.println("====两个分支合并冲突====");
+
+        	return ;
+        }
         IWorkbenchPage PAGE = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
         IEditorPart[] editorPart=PAGE.getEditors();
         for (int j = 0; j < editorPart.length; j++) {
