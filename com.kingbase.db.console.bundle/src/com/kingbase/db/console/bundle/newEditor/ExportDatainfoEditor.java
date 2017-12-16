@@ -9,9 +9,14 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -47,14 +52,19 @@ import org.pentaho.di.viewer.CBasicTreeViewer;
 import org.pentaho.di.viewer.CTableTreeLabelProvider;
 import org.pentaho.di.viewer.CTableTreeNode;
 import org.pentaho.di.viewer.CTreeStruredContentProvider;
+import org.slf4j.Logger;
 
 import com.kingbase.db.console.bundle.KBConsoleCore;
+import com.kingbase.db.console.bundle.model.tree.ConsoleRoot;
 import com.kingbase.db.console.bundle.model.tree.DatabaseEntity;
 import com.kingbase.db.console.bundle.model.tree.ExportOrImportEntity;
 import com.kingbase.db.console.bundle.model.tree.SchemaEntity;
 import com.kingbase.db.console.bundle.model.tree.TableEntity;
 import com.kingbase.db.console.bundle.views.ConsoleView;
+import com.kingbase.db.console.bundle.views.LogManagerDeploy;
 import com.kingbase.db.core.editorinput.DataBaseInput;
+import com.kingbase.db.core.util.DateUtil;
+import com.kingbase.db.core.util.FileUtil;
 import com.kingbase.db.core.util.ImageURL;
 import com.kingbase.db.core.util.UIUtils;
 
@@ -87,6 +97,9 @@ public class ExportDatainfoEditor extends EditorPart {
 	private boolean tableFlag = false;
 	private boolean schemaFlag = false;
 	private boolean databaseFlag = false;
+	private Random rand = new Random();//随机数
+
+	private Logger logger;
 
 	public ExportDatainfoEditor() {
 		// TODO Auto-generated constructor stub
@@ -105,10 +118,32 @@ public class ExportDatainfoEditor extends EditorPart {
 		setSite(site);
 		setInput(input);
 		setPartName(input.getName());
+		int nummber = rand.nextInt(100);
+		logger = LogManagerDeploy.createLogger(nummber, getLogLocation());
+		logger.info("========开始主备集群的部署========");
 		this.input = (DataBaseInput) input;
 		this.node = (ExportOrImportEntity) this.input.getNode();
 		this.connection = ConsoleView.getConnection(node.getAddress(), node.getPort(), node.getUser(),
 				node.getPassword(), UIUtils.getDatabase());
+	}
+
+	private String getLogLocation() {
+		String date = DateUtil.getDateTime1();
+		CTableTreeNode node = this.input.getNode();
+		ConsoleRoot root = (ConsoleRoot) node.getParentModel();
+//		IProject project = root.getProject();
+		if (project != null && project.exists()) {
+			
+			String logFile = MessageFormat.format("masterStandby-execute-{0}.log", date);
+			IFolder folder = project.getFolder("masterstand");
+			IFile file1 = (IFile) folder.getFile("master.xml");
+			if(file1==null || !file1.exists()){
+				
+				FileUtil.createFile(project.getLocation().toOSString() + File.separator + "masterstand/"+logFile);
+			}
+			return project.getLocation().toOSString() + File.separator + "masterstand/"+logFile;
+		}
+		return null;
 	}
 
 	@Override
@@ -140,7 +175,7 @@ public class ExportDatainfoEditor extends EditorPart {
 		toolkit.decorateFormHeading(form.getForm());
 
 		Group group1 = new Group(form.getBody(), SWT.NONE);
-		group1.setText("导出信息");
+		group1.setText("瀵煎嚭淇℃伅");
 		group1.setLayout(new GridLayout());
 		group1.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 		group1.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
@@ -152,7 +187,7 @@ public class ExportDatainfoEditor extends EditorPart {
 		compositeInfo.setLayoutData(data);
 		compositeInfo.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
 
-		Label createLabel = toolkit.createLabel(compositeInfo, "导出格式    ");
+		Label createLabel = toolkit.createLabel(compositeInfo, "瀵煎嚭鏍煎紡    ");
 
 		Composite comRedio = new Composite(compositeInfo, SWT.NONE);
 		GridLayout layout11 = new GridLayout(3, true);
@@ -161,7 +196,7 @@ public class ExportDatainfoEditor extends EditorPart {
 		comRedio.setLayoutData(data11);
 		comRedio.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
 
-		textB = toolkit.createButton(comRedio, "文本", SWT.RADIO);
+		textB = toolkit.createButton(comRedio, "鏂囨湰", SWT.RADIO);
 		GridData textB_gd = new GridData(GridData.FILL_BOTH);
 		textB.setLayoutData(textB_gd);
 		excelB = toolkit.createButton(comRedio, "excel", SWT.RADIO);
@@ -171,7 +206,7 @@ public class ExportDatainfoEditor extends EditorPart {
 		GridData xmlB_gd = new GridData(GridData.FILL_BOTH);
 		xmlB.setLayoutData(xmlB_gd);
 
-		Label createLabel1 = toolkit.createLabel(compositeInfo, "导出方式    ");
+		Label createLabel1 = toolkit.createLabel(compositeInfo, "瀵煎嚭鏂瑰紡    ");
 
 		Composite comRedio1 = new Composite(compositeInfo, SWT.NONE);
 		GridLayout layout111 = new GridLayout(3, true);
@@ -180,7 +215,7 @@ public class ExportDatainfoEditor extends EditorPart {
 		comRedio1.setLayoutData(data111);
 		comRedio1.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
 
-		databaseB = toolkit.createButton(comRedio1, "数据库", SWT.RADIO);
+		databaseB = toolkit.createButton(comRedio1, "鏁版嵁搴�", SWT.RADIO);
 		GridData fillB_gd = new GridData(GridData.FILL_BOTH);
 		databaseB.setLayoutData(fillB_gd);
 		databaseB.addSelectionListener(new SelectionListener() {
@@ -194,7 +229,7 @@ public class ExportDatainfoEditor extends EditorPart {
 						DatabaseMetaData metaData = connection.getMetaData();
 						String schemaTerm = metaData.getSchemaTerm();
 						if (!schemaTerm.equals("")) {
-							Statement stmDatabase = connection.createStatement();// 查找数据库
+							Statement stmDatabase = connection.createStatement();// 鏌ユ壘鏁版嵁搴�
 							ResultSet rsDatabase = null;
 							rsDatabase = stmDatabase.executeQuery(
 									"SELECT DATNAME,OID FROM SYS_DATABASE WHERE NOT DATISTEMPLATE AND DATALLOWCONN");
@@ -213,7 +248,7 @@ public class ExportDatainfoEditor extends EditorPart {
 						}
 					} catch (SQLException e1) {
 						e1.printStackTrace();
-						MessageDialog.openError(UIUtils.getActiveShell(), "提示", e1.getMessage());
+						MessageDialog.openError(UIUtils.getActiveShell(), "鎻愮ず", e1.getMessage());
 					}
 				}
 				 
@@ -227,7 +262,7 @@ public class ExportDatainfoEditor extends EditorPart {
 			}
 		});
 
-		schemaB = toolkit.createButton(comRedio1, "模式", SWT.RADIO);
+		schemaB = toolkit.createButton(comRedio1, "妯″紡", SWT.RADIO);
 		GridData schemaB_gd = new GridData(GridData.FILL_BOTH);
 		schemaB.setLayoutData(schemaB_gd);
 		schemaB.addSelectionListener(new SelectionListener() {
@@ -241,7 +276,7 @@ public class ExportDatainfoEditor extends EditorPart {
 						DatabaseMetaData metaData = connection.getMetaData();
 						String schemaTerm = metaData.getSchemaTerm();
 						if (!schemaTerm.equals("")) {
-							Statement stmDatabase = connection.createStatement();// 查找数据库
+							Statement stmDatabase = connection.createStatement();// 鏌ユ壘鏁版嵁搴�
 							ResultSet rsDatabase = null;
 							rsDatabase = stmDatabase.executeQuery(
 									"SELECT DATNAME,OID FROM SYS_DATABASE WHERE NOT DATISTEMPLATE AND DATALLOWCONN");
@@ -260,7 +295,7 @@ public class ExportDatainfoEditor extends EditorPart {
 						}
 					} catch (SQLException e1) {
 						e1.printStackTrace();
-						MessageDialog.openError(UIUtils.getActiveShell(), "提示", e1.getMessage());
+						MessageDialog.openError(UIUtils.getActiveShell(), "鎻愮ず", e1.getMessage());
 					}
 				}
 				cTreeView.setInput(treeList);
@@ -271,7 +306,7 @@ public class ExportDatainfoEditor extends EditorPart {
 			}
 		});
 
-		tableB = toolkit.createButton(comRedio1, "表", SWT.RADIO);
+		tableB = toolkit.createButton(comRedio1, "琛�", SWT.RADIO);
 		GridData tableB_gd = new GridData(GridData.FILL_BOTH);
 		tableB.setLayoutData(tableB_gd);
 		tableB.addSelectionListener(new SelectionListener() {
@@ -285,7 +320,7 @@ public class ExportDatainfoEditor extends EditorPart {
 						DatabaseMetaData metaData = connection.getMetaData();
 						String schemaTerm = metaData.getSchemaTerm();
 						if (!schemaTerm.equals("")) {
-							Statement stmDatabase = connection.createStatement();// 查找数据库
+							Statement stmDatabase = connection.createStatement();// 鏌ユ壘鏁版嵁搴�
 							ResultSet rsDatabase = null;
 							rsDatabase = stmDatabase.executeQuery(
 									"SELECT DATNAME,OID FROM SYS_DATABASE WHERE NOT DATISTEMPLATE AND DATALLOWCONN");
@@ -304,7 +339,7 @@ public class ExportDatainfoEditor extends EditorPart {
 						}
 					} catch (SQLException e1) {
 						e1.printStackTrace();
-						MessageDialog.openError(UIUtils.getActiveShell(), "提示", e1.getMessage());
+						MessageDialog.openError(UIUtils.getActiveShell(), "鎻愮ず", e1.getMessage());
 					}
 				}
 				cTreeView.setInput(treeList);
@@ -315,7 +350,7 @@ public class ExportDatainfoEditor extends EditorPart {
 			}
 		});
 
-		Label exportPath = toolkit.createLabel(compositeInfo, "导出路径", SWT.NONE);
+		Label exportPath = toolkit.createLabel(compositeInfo, "瀵煎嚭璺緞", SWT.NONE);
 		exportPath.setLayoutData(new GridData());
 
 		final Composite compositePath = new Composite(compositeInfo, SWT.None);
@@ -333,7 +368,7 @@ public class ExportDatainfoEditor extends EditorPart {
 		txtExportPath.setLayoutData(dataw);
 		txtExportPath.setText("");
 		Button btn1 = new Button(compositePath, SWT.NONE);
-		btn1.setText("选择");
+		btn1.setText("閫夋嫨");
 		btn1.setLayoutData(new GridData());
 
 		btn1.addSelectionListener(new SelectionListener() {
@@ -378,7 +413,7 @@ public class ExportDatainfoEditor extends EditorPart {
 		label111.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
 
 		final Button btnConfirm = new Button(compOpera, SWT.PUSH);
-		btnConfirm.setText("导出");
+		btnConfirm.setText("瀵煎嚭");
 		data11111 = new GridData(GridData.HORIZONTAL_ALIGN_END);
 		btnConfirm.setLayoutData(data11111);
 		((GridData) btnConfirm.getLayoutData()).widthHint = 61;
@@ -437,15 +472,15 @@ public class ExportDatainfoEditor extends EditorPart {
 				}
 			
 				if(success==null){
-					MessageDialog.openConfirm(UIUtils.getActiveShell(), "提示", "导出数据成功,路径为：\n"+txtExportPathT);
+					MessageDialog.openConfirm(UIUtils.getActiveShell(), "鎻愮ず", "瀵煎嚭鏁版嵁鎴愬姛,璺緞涓猴細\n"+txtExportPathT);
 				}else{
-					MessageDialog.openWarning(UIUtils.getActiveShell(), "提示", "导出数据失败\n"+success);
+					MessageDialog.openWarning(UIUtils.getActiveShell(), "鎻愮ず", "瀵煎嚭鏁版嵁澶辫触\n"+success);
 				}
 			 }
 		});
 
 		Button btnCancel = new Button(compOpera, SWT.PUSH);
-		btnCancel.setText("取消");
+		btnCancel.setText("鍙栨秷");
 		data11111 = new GridData(GridData.HORIZONTAL_ALIGN_END);
 		btnCancel.setLayoutData(data11111);
 		((GridData) btnCancel.getLayoutData()).widthHint = 61;
@@ -516,18 +551,18 @@ public class ExportDatainfoEditor extends EditorPart {
 		if (!textB.getSelection() && !excelB.getSelection()
 				&& !xmlB.getSelection()) {
 			MessageDialog
-					.openWarning(UIUtils.getActiveShell(), "提示", "请选择导出格式");
+					.openWarning(UIUtils.getActiveShell(), "鎻愮ず", "璇烽�夋嫨瀵煎嚭鏍煎紡");
 			return false;
 		}
 		if (!databaseB.getSelection() && !schemaB.getSelection()
 				&& !tableB.getSelection()) {
 			MessageDialog
-					.openWarning(UIUtils.getActiveShell(), "提示", "请选择导出方式");
+					.openWarning(UIUtils.getActiveShell(), "鎻愮ず", "璇烽�夋嫨瀵煎嚭鏂瑰紡");
 			return false;
 		}
 		if (txtExportPathT.equals("")) {
 			MessageDialog
-					.openWarning(UIUtils.getActiveShell(), "提示", "请选择导出路径");
+					.openWarning(UIUtils.getActiveShell(), "鎻愮ず", "璇烽�夋嫨瀵煎嚭璺緞");
 			txtExportPath.setFocus();
 			return false;
 		}
@@ -535,28 +570,28 @@ public class ExportDatainfoEditor extends EditorPart {
 
 		if (selection.length == 0) {
 			MessageDialog
-					.openWarning(UIUtils.getActiveShell(), "提示", "请选择导出数据");
+					.openWarning(UIUtils.getActiveShell(), "鎻愮ず", "璇烽�夋嫨瀵煎嚭鏁版嵁");
 			return false;
 		}
 		Object object = selection[0].getData();
 		if (tableB.getSelection()) {
 			if (!(object instanceof TableEntity)) {
-				MessageDialog.openWarning(UIUtils.getActiveShell(), "提示",
-						"请选择要导出的表");
+				MessageDialog.openWarning(UIUtils.getActiveShell(), "鎻愮ず",
+						"璇烽�夋嫨瑕佸鍑虹殑琛�");
 				return false;
 			}
 		}
 		else if (schemaB.getSelection()) {
 			if (!(object instanceof SchemaEntity)) {
-				MessageDialog.openWarning(UIUtils.getActiveShell(), "提示",
-						"请选择要导出的模式");
+				MessageDialog.openWarning(UIUtils.getActiveShell(), "鎻愮ず",
+						"璇烽�夋嫨瑕佸鍑虹殑妯″紡");
 				return false;
 			}
 		}
 		else if (databaseB.getSelection()) {
 			if (!(object instanceof DatabaseEntity)) {
-				MessageDialog.openWarning(UIUtils.getActiveShell(), "提示",
-						"请选择要导出的数据库");
+				MessageDialog.openWarning(UIUtils.getActiveShell(), "鎻愮ず",
+						"璇烽�夋嫨瑕佸鍑虹殑鏁版嵁搴�");
 				return false;
 			}
 		}
@@ -629,7 +664,7 @@ public class ExportDatainfoEditor extends EditorPart {
 				node.getPort(), node.getUser(), node.getPassword(), object2.getDatabase());
 		if (source != null) {
 			try {
-				Statement stmSchema = source.createStatement();// 查找模式
+				Statement stmSchema = source.createStatement();// 鏌ユ壘妯″紡
 				ResultSet rsSchema = null;
 
 				rsSchema = stmSchema
@@ -643,7 +678,7 @@ public class ExportDatainfoEditor extends EditorPart {
 					table.setName(tableName);
 					table.setDatabase(object2.getDatabase());
 					table.setSchema(object2.getName());
-					list.add(table);// 将表添加进去
+					list.add(table);// 灏嗚〃娣诲姞杩涘幓
 				}
 				stmSchema.close();
 				rsSchema.close();
@@ -666,7 +701,7 @@ public class ExportDatainfoEditor extends EditorPart {
 				DatabaseMetaData metaData = connection.getMetaData();
 				String schemaTerm = metaData.getSchemaTerm();
 				if (!schemaTerm.equals("")) {
-					Statement stmDatabase = connection.createStatement();// 查找数据库
+					Statement stmDatabase = connection.createStatement();// 鏌ユ壘鏁版嵁搴�
 					ResultSet rsDatabase = null;
 					rsDatabase = stmDatabase.executeQuery(
 							"select oid ,nspname from  sys_namespace ss where ss.nspname NOT LIKE 'SYS_%'");
