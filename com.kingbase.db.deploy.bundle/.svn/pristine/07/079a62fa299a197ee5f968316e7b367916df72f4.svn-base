@@ -1,0 +1,222 @@
+
+
+
+CLUSTER_LIB_PATH="/opt/KingbaseES/V8/Cluster/lib"
+CLUSTER_BIN_PATH="/opt/KingbaseES/V8/Cluster/bin"
+CLUSTER_LOG_PATH="$CLUSTER_BIN_PATH/log"
+CLUSTER_LOG_NAME="cluster.log"
+CLUSTER_GATEWAY_ROUTE="192.168.8.1"
+
+#network down and set ping times
+PING_TIMES=3
+
+#EXENAME, don't alter
+EXENAME="kingbasecluster"
+SHNAME="restartcluster.sh"
+CLUSTER_ETC_FILE="${CLUSTER_BIN_PATH}/../etc/kingbasecluster.conf"
+
+#EXE.SOCKET, don't alter if not change
+KINGBASECLUSTERSOCKET1="/tmp/.s.KINGBASE.9999"
+KINGBASECLUSTERSOCKET2="/tmp/.s.KINGBASE.9898"
+KINGBASECLUSTERSOCKET3="/tmp/.s.KINGBASECLUSTERWD_CMD.9000"
+CLUSTER_STAT_FILE="/tmp/kingbasecluster_status"
+
+POOL_RESTART="/tmp/pool_restart.log"
+ENDLS=$POOL_RESTART 2>&1
+
+#create file log path
+if [ ! -d "$CLUSTER_LOG_PATH" ]
+then
+
+mkdir -p $CLUSTER_LOG_PATH
+
+echo "File log dir create now" >> $POOL_RESTART 2>&1
+fi
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CLUSTER_LIB_PATH
+export PATH=$PATH:$CLUSTER_BIN_PATH
+
+
+function getpoolpid()
+{
+    cfg=`grep pid_file_name $CLUSTER_ETC_FILE`
+    # Remove the configuration line comment section in the configuration file.
+    param=${cfg%%#*}
+    
+    paramValue=${param##*=}
+
+    if [ -z $paramValue ]; then
+        return 
+    fi
+
+    local paramValue1=${paramValue//\'/}
+    echo `cat ${paramValue1// /}|head -n 1`
+    #echo `cat ${paramValue// /}|head -n 1`
+    
+    #[${paramValue// /}]
+}
+
+echo `date +'%Y-%m-%d %H:%M:%S'` ==================================================== monitor watch dog! >> $POOL_RESTART 2>&1
+
+#1. kill if network not active
+result=`ping $CLUSTER_GATEWAY_ROUTE -c $PING_TIMES | grep received | awk '{print $4}'`
+if [ $result -ne $PING_TIMES ]
+then
+        echo `date +'%Y-%m-%d %H:%M:%S'` let it down ! >>  $POOL_RESTART 2>&1
+		cd $CLUSTER_BIN_PATH
+		`./$EXENAME -m fast stop >>  $POOL_RESTART 2>&1 &`
+        
+        sleep 10 
+        echo "wait cluster stoped 10 sec ......." >> $POOL_RESTART 2>&1
+        #1, if recover node up, let it down , for rewind
+    cluster_pid=`getpoolpid`
+    if [ "$cluster_pid"x != ""x ]
+    then
+        echo "`date +'%Y-%m-%d %H:%M:%S'` stop the cluster again!" >>  $POOL_RESTART 2>&1
+         
+        isstillalive=`ps -ef | grep -w $cluster_pid |grep -w $EXENAME|grep -v grep |wc -l`
+        if [ $isstillalive -ne 0 ]
+        then
+            echo "need to killed ,is alived $isstillalive, let [ps -ef| grep -w $cluster_pid | grep -w $EXENAME | grep -v grep |awk '{print $2}' |xargs kill -9]" >> $POOL_RESTART 2>&1
+            ps -ef | grep -w $cluster_pid | grep -w $EXENAME |grep -v grep >> $POOL_RESTART 2>&1
+            `ps -ef| grep -w $cluster_pid | grep -w $EXENAME |grep -v grep |awk '{print $2}' |xargs kill -9 >>  $POOL_RESTART 2>&1` 
+            echo "kill after ...then check " >> $POOL_RESTART 2>&1 
+            ps -ef | grep -w $cluster_pid | grep -w $EXENAME |grep -v grep >> $POOL_RESTART 2>&1 
+        
+        fi
+    fi
+        
+        
+ #       isstillalive=`ps -ef | grep $EXENAME |grep -v grep | grep -v $SHNAME |wc -l`
+ #       if [ $isstillalive -ne 0 ]
+ #       then
+ #           `ps -ef| grep $EXENAME | grep -v grep |grep -v $SHNAME | awk '{print $2}' |xargs kill -9 >>  $POOL_RESTART 2>&1` 
+ #       fi
+    FILEEXIST=`ls $KINGBASECLUSTERSOCKET1 | wc -l`
+    if [ $FILEEXIST -eq 1 ]
+    then
+        rm -rf $KINGBASECLUSTERSOCKET1
+    fi
+
+    FILEEXIST=`ls $KINGBASECLUSTERSOCKET2 | wc -l`
+    if [ $FILEEXIST -eq 1 ]
+    then
+        rm -rf $KINGBASECLUSTERSOCKET2
+    fi
+    
+    FILEEXIST=`ls $KINGBASECLUSTERSOCKET3 | wc -l`
+    if [ $FILEEXIST -eq 1 ]
+    then
+        rm -rf $KINGBASECLUSTERSOCKET3
+    fi
+    
+    FILEEXIST=`ls $CLUSTER_STAT_FILE | wc -l`
+    if [ $FILEEXIST -eq 1 ]
+    then
+        rm -rf $CLUSTER_STAT_FILE
+    fi
+fi
+
+cluster_pid=`getpoolpid`
+if [ "$cluster_pid"x != ""x ]
+then
+    exestillalive=`ps -ef | grep -w $cluster_pid| grep -w $EXENAME |grep -v grep | grep -v $SHNAME |wc -l`
+    #echo still alive exes numbers $exestillalive  >> $POOL_RESTART 2>&1
+    if [ $exestillalive -eq 0 ]
+    then
+        echo `date +'%Y-%m-%d %H:%M:%S'` kingbase cluster is not alive .. >> $POOL_RESTART 2>&1
+        #echo `date` kingbase cluster is not alive! >> $POOL_RESTART 2>&1
+        result=`ping $CLUSTER_GATEWAY_ROUTE -c $PING_TIMES | grep received | awk '{print $4}'`
+        #result=1
+        if [ $result -eq $PING_TIMES ]
+        then
+            echo `date` ping $CLUSTER_GATEWAY_ROUTE $PING_TIMES times and received $result, that satisfy $EXENAME restart, beging... >> $POOL_RESTART 2>&1
+
+            #del .socket file
+            FILEEXIST=`ls $KINGBASECLUSTERSOCKET1 | wc -l`
+            if [ $FILEEXIST -eq 1 ]
+            then
+                rm -rf $KINGBASECLUSTERSOCKET1
+            fi
+
+            FILEEXIST=`ls $KINGBASECLUSTERSOCKET2 | wc -l`
+            if [ $FILEEXIST -eq 1 ]
+            then
+                rm -rf $KINGBASECLUSTERSOCKET2
+            fi
+            
+            FILEEXIST=`ls $KINGBASECLUSTERSOCKET3 | wc -l`
+            if [ $FILEEXIST -eq 1 ]
+            then
+                rm -rf $KINGBASECLUSTERSOCKET3
+            fi
+            
+            FILEEXIST=`ls $CLUSTER_STAT_FILE | wc -l`
+            if [ $FILEEXIST -eq 1 ]
+            then
+                rm -rf $CLUSTER_STAT_FILE
+            fi
+            
+            echo ---- `date` moniter up ---- >> $CLUSTER_LOG_PATH/${CLUSTER_LOG_NAME}
+            echo ----   moniter restart ---- >> $POOL_RESTART 2>&1        
+            cd $CLUSTER_BIN_PATH
+            `./$EXENAME -n >>  $CLUSTER_LOG_PATH/${CLUSTER_LOG_NAME}  2>&1 &`
+            echo moniter watch and restart success. >> $POOL_RESTART 2>&1 
+        else
+            echo `date` ping $CLUSTER_GATEWAY_ROUTE $PING_TIMES times and received $result, that not satisfy $EXENAME restart, please hold on ... >> $POOL_RESTART 2>&1 
+        fi
+
+    else
+        echo `date +'%Y-%m-%d %H:%M:%S'` $EXENAME is still alive $exestillalive. >> $POOL_RESTART 2>&1 
+    fi
+
+else
+    echo `date +'%Y-%m-%d %H:%M:%S'` "pool is not pid in system" >> $POOL_RESTART 2>&1
+    echo `date +'%Y-%m-%d %H:%M:%S'` kingbase cluster is not alive .. >> $POOL_RESTART 2>&1
+    #echo `date` kingbase cluster is not alive! >> $POOL_RESTART 2>&1
+    result=`ping $CLUSTER_GATEWAY_ROUTE -c $PING_TIMES | grep received | awk '{print $4}'`
+    #result=1
+    if [ $result -eq $PING_TIMES ]
+    then
+        echo `date` ping $CLUSTER_GATEWAY_ROUTE $PING_TIMES times and received $result, that satisfy $EXENAME restart, beging... >> $POOL_RESTART 2>&1
+
+        #del .socket file
+        FILEEXIST=`ls $KINGBASECLUSTERSOCKET1 | wc -l`
+        if [ $FILEEXIST -eq 1 ]
+        then
+            rm -rf $KINGBASECLUSTERSOCKET1
+        fi
+
+        FILEEXIST=`ls $KINGBASECLUSTERSOCKET2 | wc -l`
+        if [ $FILEEXIST -eq 1 ]
+        then
+            rm -rf $KINGBASECLUSTERSOCKET2
+        fi
+        
+        FILEEXIST=`ls $KINGBASECLUSTERSOCKET3 | wc -l`
+        if [ $FILEEXIST -eq 1 ]
+        then
+            rm -rf $KINGBASECLUSTERSOCKET3
+        fi
+        
+        FILEEXIST=`ls $CLUSTER_STAT_FILE | wc -l`
+        if [ $FILEEXIST -eq 1 ]
+        then
+            rm -rf $CLUSTER_STAT_FILE
+        fi
+        
+        echo ---- `date` moniter up ---- >> $CLUSTER_LOG_PATH/${CLUSTER_LOG_NAME}
+        echo ----   moniter restart ---- >> $POOL_RESTART 2>&1        
+        cd $CLUSTER_BIN_PATH
+        `./$EXENAME -n >>  $CLUSTER_LOG_PATH/${CLUSTER_LOG_NAME}  2>&1 &`
+        echo moniter watch and restart success. >> $POOL_RESTART 2>&1 
+    else
+        echo `date` ping $CLUSTER_GATEWAY_ROUTE $PING_TIMES times and received $result, that not satisfy $EXENAME restart, please hold on ... >> $POOL_RESTART 2>&1 
+    fi
+fi
+
+
+
+
+
+

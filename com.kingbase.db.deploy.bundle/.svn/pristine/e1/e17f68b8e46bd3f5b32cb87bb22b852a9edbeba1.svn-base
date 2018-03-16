@@ -1,0 +1,283 @@
+package com.kingbase.db.deploy.bundle.editor;
+
+import java.util.List;
+import java.util.Map;
+
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.viewers.CellEditor;
+import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.jface.viewers.TextCellEditor;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.events.TraverseEvent;
+import org.eclipse.swt.events.TraverseListener;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Dialog;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Monitor;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+
+import com.jcraft.jsch.Session;
+import com.kingbase.db.core.util.DateUtil;
+import com.kingbase.db.core.util.JschUtil;
+import com.kingbase.db.core.util.PickerShellTableSort;
+import com.kingbase.db.deploy.bundle.editor.page.ContentProvider;
+import com.kingbase.db.deploy.bundle.editor.page.KeyValueProvider;
+import com.kingbase.db.deploy.bundle.graphical.editor.CreateMasterStatusEditor;
+import com.kingbase.db.deploy.bundle.model.tree.CNodeEntity;
+import com.kingbase.db.deploy.bundle.model.tree.KeyValueEntity;
+import com.kingbase.db.deploy.bundle.model.tree.KeyValueModifier;
+import com.kingbase.db.deploy.bundle.model.tree.TableNodeEntity;
+
+public class UpdateConfDialog extends Dialog {
+
+	private Shell shell;
+	private Button btnCancel;
+	private Button btnApply;
+	private TableViewer tv3;
+	private Table tableVar;
+	private List<KeyValueEntity> listkv;
+	private Button btnThis;
+	private Button btnAll;
+	private Map<String, Session> sessionMap;
+	private CNodeEntity entity;
+	private String type;
+	private CreateMasterStatusEditor editor;
+
+	public UpdateConfDialog(Shell shell, List<KeyValueEntity> listkv, Map<String, Session> sessionMap, CNodeEntity entity, String type, CreateMasterStatusEditor editor) {
+		super(shell);
+		this.shell = shell;
+		this.listkv = listkv;
+		this.sessionMap = sessionMap;
+		this.entity = entity;
+		this.type = type;
+		this.editor = editor;
+
+		createDialog();
+	}
+
+	private void createDialog() {
+
+		shell = new Shell(getParent(), SWT.TITLE | SWT.BORDER | SWT.APPLICATION_MODAL | SWT.RESIZE);
+		shell.setText("配置文件修改");
+		final GridLayout gridLayout_31 = new GridLayout();
+
+		gridLayout_31.verticalSpacing = 0;
+		gridLayout_31.marginWidth = 0;
+		gridLayout_31.marginHeight = 0;
+		gridLayout_31.horizontalSpacing = 0;
+		shell.setLayout(gridLayout_31);
+		shell.setSize(500, 630);
+		if (shell != null) {// 居中
+			Monitor[] monitorArray = Display.getCurrent().getMonitors();
+			Rectangle rectangle = monitorArray[0].getBounds();
+			Point size = shell.getSize();
+			shell.setLocation((rectangle.width - size.x) / 2, (rectangle.height - size.y) / 2);
+		}
+
+		shell.addTraverseListener(new TraverseListener() {
+
+			@Override
+			public void keyTraversed(TraverseEvent e) {
+				// 如果按的是Esc键就不执行操作
+				if (e.detail == SWT.TRAVERSE_ESCAPE) {
+					e.doit = false;
+				}
+			}
+		});
+
+		Composite composite = new Composite(shell, SWT.NONE);
+		composite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		GridLayout gl_composite = new GridLayout(1, false);
+		gl_composite.verticalSpacing = 3;
+		gl_composite.marginRight = 6;
+		gl_composite.marginLeft = 6;
+		gl_composite.marginTop = 6;
+		composite.setLayout(gl_composite);
+
+		tableVar = new Table(composite, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI);
+		tableVar.setLinesVisible(true);
+		tableVar.setHeaderVisible(true);
+		tableVar.setLayout(new GridLayout());
+		GridData dataGroup = new GridData(SWT.FILL, SWT.FILL, true, true);
+		tableVar.setLayoutData(dataGroup);
+		String[] string1 = new String[] { "属性", "值"};
+		for (int i = 0; i < string1.length; i++) {
+			TableColumn column = new TableColumn(tableVar, SWT.NONE);
+			column.setText(string1[i]);
+			if (i == 0) {
+				column.setWidth(200);
+			} else {
+				column.setWidth(240);
+			}
+		}
+
+		tv3 = new TableViewer(tableVar);
+		tv3.setContentProvider(new ContentProvider());
+		tv3.setLabelProvider(new KeyValueProvider());
+		tv3.setColumnProperties(KeyValueModifier.KEY_VALUE);
+
+		final CellEditor[] editors3 = new CellEditor[2];
+		editors3[0] = new TextCellEditor(tv3.getTable());
+		editors3[1] = new TextCellEditor(tv3.getTable());
+		tv3.setCellModifier(new KeyValueModifier(tv3));
+		tv3.setCellEditors(editors3);
+		if (listkv != null) {
+			tv3.setInput(listkv);
+		}
+		new PickerShellTableSort(tableVar);
+		Composite compOpera = new Composite(shell, SWT.NONE);
+		GridLayout gl_compOpera = new GridLayout(3, false);
+		gl_compOpera.marginTop = 20;
+		GridData data11 = new GridData(GridData.FILL_HORIZONTAL);
+		compOpera.setLayout(gl_compOpera);
+		compOpera.setLayoutData(data11);
+
+		Composite comp = new Composite(compOpera, SWT.NONE);
+		GridLayout gl_comp = new GridLayout(2, false);
+		gl_comp.marginBottom = 16;
+		GridData data121 = new GridData(GridData.FILL_HORIZONTAL);
+		comp.setLayout(gl_comp);
+		comp.setLayoutData(data121);
+
+		btnThis = new Button(comp, SWT.RADIO);
+		btnThis.setText("下发至本节点");
+		GridData button_gd1 = new GridData();
+		btnThis.setLayoutData(button_gd1);
+		btnThis.setSelection(true);
+
+		btnAll = new Button(comp, SWT.RADIO);
+		btnAll.setText("下发至所有节点");
+		GridData button_gd11 = new GridData();
+		btnAll.setLayoutData(button_gd11);
+
+		btnApply = new Button(compOpera, SWT.PUSH);
+		btnApply.setText("确定");
+		GridData button_gd1121 = new GridData();
+		button_gd1121.widthHint = 65;
+		btnApply.setLayoutData(button_gd1121);
+		btnApply.addSelectionListener(new SelectionListener() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				StringBuffer buf = new StringBuffer("sed -i");
+				int i = 0;
+				for (KeyValueEntity cell : listkv) {
+					if (!cell.getValue().equals(cell.getOldValue())) {
+						if(cell.getKey().startsWith("#")){//注释的参数若是修改了，则相当于改为开启
+							String key = cell.getKey().substring(1, cell.getKey().length());
+							buf.append(" -e \"s@"+cell.getKey()+"="+cell.getOldValue()+"@"+key+"="+cell.getValue()+"@\"");//@用作分隔符
+						}else{
+							buf.append(" -e \"s@"+cell.getKey()+"="+cell.getOldValue()+"@"+cell.getKey()+"="+cell.getValue()+"@\"");//@用作分隔符
+						}
+						i++;
+					}
+				}
+				if (i == 0) {
+					boolean openConfirm = MessageDialog.openConfirm(shell, "提示", "并未修改任何配置,是否关闭窗口");
+					if (openConfirm) {
+						shell.dispose();
+					}
+				}
+				Session session = null;
+				if (btnAll.getSelection()) {
+					for (String key : sessionMap.keySet()) {
+						if (type.equals("kingbasecluster.conf")) {
+
+							List<TableNodeEntity> listpool = editor.getContainerModel().getNode().getPoolEntity().getListPool();
+							for (TableNodeEntity nodepool : listpool) {
+								String str = nodepool.getNodeEntity().getIp() + "_" + nodepool.getNodeEntity().getPort() + "_" + nodepool.getNodeEntity().getRootPass();
+								if (str.equals(key)) {
+									session = sessionMap.get(key);
+									try {
+										JschUtil.execCommand1(session, buf.toString() + " " + nodepool.getNodeEntity().getdPath() + "kingbasecluster/etc/kingbasecluster.conf");
+									} catch (Exception e1) {
+										e1.printStackTrace();
+									}
+									break;
+								}
+							}
+						} else if (type.equals("kingbase.conf")) {
+							List<TableNodeEntity> listDb = editor.getContainerModel().getNode().getPosEntity().getListDb();
+							for (TableNodeEntity nodeDB : listDb) {
+								String str = nodeDB.getNodeEntity().getIp() + "_" + nodeDB.getNodeEntity().getPort() + "_" + nodeDB.getNodeEntity().getRootPass();
+								if (str.equals(key)) {
+									session = sessionMap.get(key);
+									try {
+										if (type.equals("kingbase.conf")) {
+											JschUtil.execCommand1(session, buf.toString() + " " + nodeDB.getNodeEntity().getdPath() + "db/data/kingbase.conf");
+											JschUtil.execCommand1(session, buf.toString() + " " + nodeDB.getNodeEntity().getdPath() + "db/etc/kingbase.conf");
+										}
+									} catch (Exception e1) {
+										e1.printStackTrace();
+									}
+									break;
+								}
+							}
+
+						}
+					}
+				} else {
+					for (String key : sessionMap.keySet()) {
+						String str = entity.getIp() + "_" + entity.getPort() + "_" + entity.getRootPass();
+						if (str.equals(key)) {
+							session = sessionMap.get(key);
+							try {
+								if (type.equals("kingbase.conf")) {
+									JschUtil.execCommand1(session, buf.toString() + " " + entity.getdPath() + "db/data/kingbase.conf");
+									JschUtil.execCommand1(session, buf.toString() + " " + entity.getdPath() + "db/etc/kingbase.conf");
+								} else if (type.equals("kingbasecluster.conf")) {
+									JschUtil.execCommand1(session, buf.toString() + " " + entity.getdPath() + "kingbasecluster/etc/kingbasecluster.conf");
+								}
+							} catch (Exception e1) {
+								e1.printStackTrace();
+							}
+							break;
+						}
+					}
+				}
+				MessageDialog.openWarning(shell, "提示", "配置下发成功，请手动重启集群");
+				shell.dispose();
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+		});
+
+		btnCancel = new Button(compOpera, SWT.PUSH);
+		btnCancel.setText("取消");
+		GridData button_gd111 = new GridData();
+		button_gd111.widthHint = 65;
+		btnCancel.setLayoutData(button_gd111);
+		btnCancel.addSelectionListener(new SelectionListener() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				shell.dispose();
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+		});
+	}
+
+	public void open() {
+		shell.open();
+		shell.layout();
+		Display display = getParent().getDisplay();
+		while (!shell.isDisposed()) {
+			if (!display.readAndDispatch())
+				display.sleep();
+		}
+	}
+}

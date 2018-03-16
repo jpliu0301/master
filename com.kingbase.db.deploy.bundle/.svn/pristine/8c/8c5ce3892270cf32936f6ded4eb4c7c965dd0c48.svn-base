@@ -1,0 +1,132 @@
+package com.kingbase.db.deploy.bundle.graphical.action;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.gef.ui.actions.SelectionAction;
+import org.eclipse.ui.IWorkbenchPart;
+
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import com.kingbase.db.core.util.FileUtil;
+import com.kingbase.db.core.util.ImageURL;
+import com.kingbase.db.core.util.JschUtil;
+import com.kingbase.db.core.util.SafeProperties;
+import com.kingbase.db.core.util.UIUtils;
+import com.kingbase.db.deploy.bundle.KBDeployCore;
+import com.kingbase.db.deploy.bundle.editor.UpdateConfDialog;
+import com.kingbase.db.deploy.bundle.graphical.editor.CreateMasterStatusEditor;
+import com.kingbase.db.deploy.bundle.model.tree.CNodeEntity;
+import com.kingbase.db.deploy.bundle.model.tree.KeyValueEntity;
+
+public class UpdateConfAction extends SelectionAction {
+
+	private CNodeEntity entity;
+	private Map<String, Session> sessionMap;
+	private String type;
+	private CreateMasterStatusEditor editor;
+
+	public UpdateConfAction(IWorkbenchPart part, CNodeEntity entity, String type, CreateMasterStatusEditor editor) {
+		super(part);
+		setId(UUID.randomUUID().toString());
+		this.entity = entity;
+		this.type = type;
+		this.sessionMap = editor.getContainerModel().getSessionMap();
+		this.editor = editor;//kingbase.conf配置文件修改
+		setText(type + "配置文件修改");
+		setImageDescriptor(ImageURL.createImageDescriptor(KBDeployCore.PLUGIN_ID, ImageURL.replication));
+	}
+
+	@Override
+	public void run() {
+		super.run();
+		Session session = null;
+		Set<String> keySet = sessionMap.keySet();
+		for (String key : keySet) {
+			String str = entity.getIp()+"_"+entity.getPort()+"_"+entity.getRootPass();
+			if (str.equals(key)) {
+				session = sessionMap.get(key);
+				break;
+			}
+		}
+		if (session != null && !session.isConnected()) {
+			try {
+				session.connect(15000);
+			} catch (JSchException e) {
+				e.printStackTrace();
+			}
+		}
+		String path = "";
+		String steam = "";
+		if (type.equals("kingbase.conf")) {
+			path = Platform.getLocation().toOSString() + File.separator + "kingbase.conf";
+			ChannelExec channel = JschUtil.execCommand(session, "cat " + entity.getdPath() + "db/data/kingbase.conf");
+			steam = JschUtil.returnInputStream(channel);
+			channel.disconnect();
+
+		} else if (type.equals("kingbasecluster.conf")) {
+			path = Platform.getLocation().toOSString() + File.separator + "kingbasecluster.conf";
+			ChannelExec channel = JschUtil.execCommand(session, "cat " + entity.getdPath() + "kingbasecluster/etc/kingbasecluster.conf");
+			steam = JschUtil.returnInputStream(channel);
+			channel.disconnect();
+		}
+		File file = new File(path);
+		if (file == null || !file.exists()) {
+
+			FileUtil.createFile(path);
+		}
+		FileOutputStream fop;
+		try {
+			fop = new FileOutputStream(path);
+			byte[] contentInBytes = steam.getBytes();
+			fop.write(contentInBytes);
+			fop.flush();
+			fop.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		SafeProperties prop = new SafeProperties();
+		List<KeyValueEntity> listkv = new ArrayList<KeyValueEntity>();
+		try {
+			InputStream fis = new FileInputStream(path);
+			prop.load1(fis);
+			Object[] objs = prop.keySet().toArray();
+			for (int i = 0; i < objs.length; i++) {
+				KeyValueEntity entity = new KeyValueEntity();
+				entity.setKey(objs[i].toString());
+				String value = prop.getProperty(objs[i].toString());
+				if (value != null && value != "" && value.contains("#")) {
+					value = value.substring(0, value.indexOf("#")).replaceAll("\t", "");
+				}
+				entity.setValue(value);
+				entity.setOldValue(value);
+				listkv.add(entity);
+			}
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+		UpdateConfDialog dialog = new UpdateConfDialog(UIUtils.getActiveShell(), listkv,sessionMap, entity, type,editor);
+		dialog.open();
+		file.delete();
+
+	}
+
+	@Override
+	protected boolean calculateEnabled() {
+		return true;
+	}
+
+}

@@ -26,11 +26,43 @@
          point="org.eclipse.core.runtime.products">
       <product
             application="com.kingbase.db.tools.application.application"
-            name="test">
+            name="tools">
          <property
                name="appName"
-               value="test">
+               value="tools">
+         </property>
+         <property
+               name="preferenceCustomization"
+               value="plugin_customization.ini">
          </property>
       </product>
    </extension>
+	<extension
+          point="org.eclipse.ui.intro">
+       <intro
+             class="org.eclipse.ui.intro.config.CustomizableIntroPart"
+             icon="icons/dbeaver16.png"
+             id="com.kingbase.tool.intro"
+             label="欢迎">
+       </intro>
+       <introProductBinding
+             introId="com.kingbase.tool.intro"
+             productId="com.kingbase.db.tools.application.product">
+       </introProductBinding>
+    </extension>
+	<extension
+          point="org.eclipse.ui.intro.config">
+       <config
+             content="welcome/introContent.xml"
+             id="org.jkiss.dbeaver.core.application.config"
+             introId="com.kingbase.tool.intro">
+          <presentation
+                home-page-id="root">
+             <implementation
+                   kind="html"
+                   os="win32,linux,macosx">
+             </implementation>
+          </presentation>
+       </config>
+    </extension>
 </plugin>

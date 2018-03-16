@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+
+<plugin>
+  <extension point="org.eclipse.help.toc">
+    <toc file="toc/tocSql.xml" primary="true"/>
+    <toc file="toc/tocServer-programming.xml" primary="true"/>
+    <toc file="toc/tocClient-interfaces.xml" primary="true"/>
+    <toc file="toc/tocAdmin.xml" primary="true"/>
+    <toc file="toc/tocHighly.xml" primary="true"/>
+    <toc file="toc/tocPerformance.xml" primary="true"/>
+    <toc file="toc/tocData-migration.xml" primary="true"/>
+    <toc file="toc/tocSafely-control.xml" primary="true"/>
+    <toc file="toc/tocMonitor.xml" primary="true"/>
+    <toc file="toc/tocReference.xml" primary="true"/>
+  </extension>
+</plugin>

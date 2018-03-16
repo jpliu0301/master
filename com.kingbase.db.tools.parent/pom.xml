@@ -2,26 +2,24 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.kingbase.db.tools</groupId>
   <artifactId>com.kingbase.db.tools.parent</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>8.2.0</version>
   <packaging>pom</packaging>
   
  <properties>
-		<tycho.version>1.0.0</tycho.version>
+		<tycho.version>0.22.0</tycho.version>
 	</properties>
   
   <repositories>
 		<repository>
-			<id>mars</id>
+			<id>luna</id>
 			<layout>p2</layout>
-			<url>http://download.eclipse.org/releases/mars/</url>
+			<url>http://download.eclipse.org/releases/luna/</url>
 		</repository>
-		<!--
 		<repository>
-			<id>galileoTest</id>
+			<id>luna_babel</id>
 			<layout>p2</layout>
-			<url>http://download.eclipse.org/eclipse/updates/3.6-JUnit-Tests/</url>
+			<url>http://download.eclipse.org/technology/babel/update-site/R0.14.1/luna</url>
 		</repository>
-		-->
 		<repository>
 			<id>pentaho-releases</id>
 			<url>http://repository.pentaho.org/artifactory/repo/</url>
@@ -88,20 +86,13 @@
 											org.eclipse.tycho
 										</groupId>
 										<artifactId>
-											tycho-packaging-plugin
+											tycho-compiler-plugin
 										</artifactId>
 										<versionRange>
-											[1.0.0,)
+											[0.22.0,)
 										</versionRange>
 										<goals>
-											<goal>build-qualifier</goal>
-											<goal>validate-id</goal>
-											<goal>
-												validate-version
-											</goal>
-											<goal>
-												build-qualifier-aggregator
-											</goal>
+											<goal>compile</goal>
 										</goals>
 									</pluginExecutionFilter>
 									<action>
@@ -114,13 +105,20 @@
 											org.eclipse.tycho
 										</groupId>
 										<artifactId>
-											tycho-compiler-plugin
+											tycho-packaging-plugin
 										</artifactId>
 										<versionRange>
-											[1.0.0,)
+											[0.22.0,)
 										</versionRange>
 										<goals>
-											<goal>compile</goal>
+											<goal>build-qualifier</goal>
+											<goal>
+												validate-version
+											</goal>
+											<goal>validate-id</goal>
+											<goal>
+												build-qualifier-aggregator
+											</goal>
 										</goals>
 									</pluginExecutionFilter>
 									<action>

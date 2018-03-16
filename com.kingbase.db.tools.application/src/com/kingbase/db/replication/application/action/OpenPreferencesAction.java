@@ -55,6 +55,7 @@ public class OpenPreferencesAction extends Action implements ActionFactory.IWork
 		PreferencesUtil.createPreferenceDialogOn(workbenchWindow.getShell(), items[0], items, null).open();
 	}
 
+	@Override
 	public void dispose() {
 		workbenchWindow = null;
 	}

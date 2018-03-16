@@ -32,46 +32,53 @@
    <extension
          point="org.eclipse.ui.editors">
       <editor
-            class="com.kingbase.db.console.bundle.newEditor.InstanceInstallEditor"
+            class="com.kingbase.db.console.bundle.editor.CreateBackupSetEditor"
             default="false"
             icon="icons/edit.png"
-            id="com.kingbase.db.console.bundle.newEditor.InstanceInstallEditor"
-            name="实例加载">
+            id="com.kingbase.db.console.bundle.editor.CreateBackupSetEditor"
+            name="新建备份集">
       </editor>
       <editor
-            class="com.kingbase.db.console.bundle.newEditor.ServiceStatusEditor"
+            class="com.kingbase.db.console.bundle.editor.CheckBackupSetEditor"
             default="false"
-            icon="icons/association.png"
-            id="com.kingbase.db.console.bundle.newEditor.ServiceStatusEditor"
-            name="服务状态">
+            icon="icons/table.png"
+            id="com.kingbase.db.console.bundle.editor.CheckBackupSetEditor"
+            name="查看备份集">
       </editor>
       <editor
-            class="com.kingbase.db.console.bundle.newEditor.InstanceUninstallEditor"
+            class="com.kingbase.db.console.bundle.editor.IoTuningEditor"
             default="false"
-            id="com.kingbase.db.console.bundle.newEditor.InstanceUninstallEditor"
-            name="实例卸载"
-            icon="icons/error_blue1.png">
+            icon="icons/info.png"
+            id="com.kingbase.db.console.bundle.editor.IoTuningEditor"
+            name="性能调优">
       </editor>
       <editor
-            class="com.kingbase.db.console.bundle.newEditor.ServerInfoEditor"
+            class="com.kingbase.db.console.bundle.editor.ServiceManagerEditor"
             default="false"
-            icon="icons/Copy.png"
-            id="com.kingbase.db.console.bundle.newEditor.ServerInfoEditor"
+            icon="icons/table.png"
+            id="com.kingbase.db.console.bundle.editor.ServiceManagerEditor"
+            name="服务管理">
+      </editor>
+      <editor
+            class="com.kingbase.db.console.bundle.editor.ServerAnalysisEditor"
+            default="false"
+            icon="icons/DBNavigation_blue.png"
+            id="com.kingbase.db.console.bundle.editor.ServerAnalysisEditor"
             name="服务器信息">
       </editor>
       <editor
-            class="com.kingbase.db.console.bundle.newEditor.ImportDatainfoEditor"
+            class="com.kingbase.db.console.bundle.editor.CreateLogAnalysisEditor"
             default="false"
-            icon="icons/error_blue1.png"
-            id="com.kingbase.db.console.bundle.newEditor.ImportDatainfoEditor"
-            name="导入数据">
+            icon="icons/file.png"
+            id="com.kingbase.db.console.bundle.editor.CreateLogAnalysisEditor"
+            name="新建日志分析">
       </editor>
       <editor
-            class="com.kingbase.db.console.bundle.newEditor.ExportDatainfoEditor"
+            class="com.kingbase.db.console.bundle.editor.BrowserEditor"
             default="false"
-            icon="icons/Copy.png"
-            id="com.kingbase.db.console.bundle.newEditor.ExportDatainfoEditor"
-            name="导出数据">
+            icon="icons/file.png"
+            id="com.kingbase.db.console.bundle.editor.BrowserEditor"
+            name="日志分析">
       </editor>
    </extension>
 
