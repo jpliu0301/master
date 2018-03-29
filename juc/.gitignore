@@ -1,0 +1,8 @@
+#Eclipse
+.classpath
+.project
+.metadata
+.settings
+build/
+.externalToolBuilders/
+bin/
